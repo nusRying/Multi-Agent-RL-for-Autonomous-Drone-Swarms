@@ -1,0 +1,74 @@
+version: 1
+name: domain_randomization_v1
+enabled: false
+description: >
+  Randomize dynamics and sensing per episode reset to improve robustness for sim-to-real transfer.
+
+apply_on_reset: true
+
+randomization:
+  dynamics:
+    mass_scale:
+      distribution: uniform
+      min: 0.85
+      max: 1.15
+    max_accel_scale:
+      distribution: uniform
+      min: 0.90
+      max: 1.10
+    max_speed_scale:
+      distribution: uniform
+      min: 0.90
+      max: 1.10
+    dt_scale:
+      distribution: uniform
+      min: 0.95
+      max: 1.05
+
+  actuation:
+    control_delay_steps:
+      distribution: discrete
+      values: [0, 1, 2]
+      probs: [0.7, 0.2, 0.1]
+    thrust_noise_std:
+      distribution: normal
+      mean: 0.0
+      std: 0.03
+
+  sensing:
+    position_noise_std:
+      distribution: normal
+      mean: 0.0
+      std: 0.02
+    velocity_noise_std:
+      distribution: normal
+      mean: 0.0
+      std: 0.02
+    obstacle_distance_noise_std:
+      distribution: normal
+      mean: 0.0
+      std: 0.03
+
+  environment:
+    obstacle_radius_scale:
+      distribution: uniform
+      min: 0.9
+      max: 1.1
+    world_size_scale:
+      distribution: uniform
+      min: 0.95
+      max: 1.05
+
+evaluation:
+  use_randomization: true
+  out_of_distribution_profile:
+    mass_scale:
+      min: 0.80
+      max: 1.20
+    max_accel_scale:
+      min: 0.85
+      max: 1.15
+    control_delay_steps:
+      values: [0, 1, 2, 3]
+      probs: [0.5, 0.25, 0.15, 0.10]
+

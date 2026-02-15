@@ -1,0 +1,46 @@
+version: 1
+name: eval_protocol_v1
+description: Standard evaluation settings used for milestone claims.
+
+seeds: [0, 1, 2, 3, 4]
+episodes_per_seed: 100
+
+scenarios:
+  - scenario_id: single_agent_static
+    env_config:
+      num_drones: 1
+      num_obstacles: 8
+      max_steps: 400
+
+  - scenario_id: multi_agent_n3_static
+    env_config:
+      num_drones: 3
+      num_obstacles: 8
+      max_steps: 400
+
+  - scenario_id: multi_agent_n5_static
+    env_config:
+      num_drones: 5
+      num_obstacles: 8
+      max_steps: 400
+
+  - scenario_id: multi_agent_n8_hard
+    env_config:
+      num_drones: 8
+      num_obstacles: 12
+      max_steps: 450
+
+pass_fail_thresholds:
+  single_agent_static:
+    min_success_rate: 0.90
+    min_collision_free_rate: 0.95
+  multi_agent_n3_static:
+    min_success_rate: 0.75
+    min_collision_free_rate: 0.80
+  multi_agent_n5_static:
+    min_success_rate: 0.70
+    min_collision_free_rate: 0.80
+  multi_agent_n8_hard:
+    min_success_rate: 0.60
+    min_collision_free_rate: 0.65
+

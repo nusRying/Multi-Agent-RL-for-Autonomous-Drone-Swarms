@@ -1,0 +1,5 @@
+scenario,algo,seed_group,n_eval_episodes,success_rate,collision_free_rate,threshold_success_rate,threshold_collision_free_rate,pass_fail,mean_time_to_goal,formation_error,path_efficiency,episode_reward_mean,episode_reward_std,notes
+single_agent_static,PPO,0-4,100,0.00,0.00,0.90,0.95,FAIL,0.00,,0.00,0.00,0.00,replace with measured values
+multi_agent_n3_static,PPO_shared,0-4,100,0.00,0.00,0.75,0.80,FAIL,0.00,0.00,0.00,0.00,0.00,replace with measured values
+multi_agent_n5_static,PPO_shared,0-4,100,0.00,0.00,0.70,0.80,FAIL,0.00,0.00,0.00,0.00,0.00,replace with measured values
+multi_agent_n8_hard,CTDE_variant,0-4,100,0.00,0.00,0.60,0.65,FAIL,0.00,0.00,0.00,0.00,0.00,replace with measured values

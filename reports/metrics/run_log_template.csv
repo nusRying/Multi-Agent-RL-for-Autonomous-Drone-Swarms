@@ -1,0 +1,4 @@
+run_id,date,stage,seed,algo,env_name,num_drones,num_obstacles,max_steps,lr,gamma,train_batch_size,iterations,checkpoint_path,notes
+run_0001,2026-02-13,week_02_single_agent,0,PPO,single_drone_v0,1,8,400,3e-4,0.99,8192,50,checkpoints/single_agent/,baseline smoke run
+run_0002,2026-02-13,week_04_multi_agent,0,PPO,drone_swarm_v0,3,8,400,3e-4,0.99,16384,100,checkpoints/multi_agent/,shared policy baseline
+

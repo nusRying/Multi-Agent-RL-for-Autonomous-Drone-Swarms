@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.pytest_cache/
+.mypy_cache/
+
+# Virtualenvs
+.venv/
+venv/
+env/
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+
+# Ray / training artifacts
+ray_results/
+checkpoints/
+wandb/
+tb_logs/
+
+# IDE
+.idea/
+.vscode/
+
+# OS files
+Thumbs.db
+.DS_Store
+

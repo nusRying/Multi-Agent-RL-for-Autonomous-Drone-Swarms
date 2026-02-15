@@ -1,0 +1,61 @@
+version: 1
+name: curriculum_v1_static_to_dense
+description: >
+  Start easy, then scale difficulty by increasing obstacles and drone count.
+  Promote when rolling metrics satisfy thresholds.
+
+promotion_window_episodes: 100
+
+stages:
+  - stage_id: 1
+    stage_name: n3_empty
+    env_config:
+      num_drones: 3
+      num_obstacles: 0
+      max_steps: 300
+      world_size: 20.0
+    train_iterations: 50
+    promotion_criteria:
+      min_success_rate: 0.85
+      min_collision_free_rate: 0.95
+      max_mean_time_to_goal: 140
+
+  - stage_id: 2
+    stage_name: n3_sparse
+    env_config:
+      num_drones: 3
+      num_obstacles: 4
+      max_steps: 350
+      world_size: 20.0
+    train_iterations: 75
+    promotion_criteria:
+      min_success_rate: 0.80
+      min_collision_free_rate: 0.90
+      max_mean_time_to_goal: 160
+
+  - stage_id: 3
+    stage_name: n5_static
+    env_config:
+      num_drones: 5
+      num_obstacles: 8
+      max_steps: 400
+      world_size: 24.0
+    train_iterations: 100
+    promotion_criteria:
+      min_success_rate: 0.75
+      min_collision_free_rate: 0.85
+      max_mean_time_to_goal: 190
+
+  - stage_id: 4
+    stage_name: n8_dense
+    env_config:
+      num_drones: 8
+      num_obstacles: 12
+      max_steps: 450
+      world_size: 28.0
+    train_iterations: 150
+    promotion_criteria:
+      min_success_rate: 0.65
+      min_collision_free_rate: 0.75
+      max_mean_time_to_goal: 240
+
