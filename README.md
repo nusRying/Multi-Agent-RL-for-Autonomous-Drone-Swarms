@@ -9,7 +9,9 @@ This repository is a full starter pipeline for a CV-grade MARL project:
 
 The code currently implements a mathematically clean 3D point-mass swarm environment and RLlib-ready training scripts. This README explains the complete pipeline, core equations, and rationale for each design choice.
 
-Detailed execution tracker:
+Project docs:
+- `docs/RUNBOOK.md` (exact commands to train/evaluate/plot on Windows)
+- `docs/TROUBLESHOOTING.md` (known Ray/Windows issues and fixes)
 - `docs/EXPERIMENT_PLAN.md` (10-week milestones, metric gates, experiment matrix, risk register)
 
 Experiment templates:
@@ -21,6 +23,7 @@ Experiment templates:
 - `configs/curriculum_v1.yaml`
 - `configs/domain_randomization_v1.yaml`
 - `configs/eval_protocol_v1.yaml`
+- `configs/eval_protocol_quick.yaml`
 
 ## 1. Repository Scope and Design Philosophy
 
@@ -32,6 +35,15 @@ This starter intentionally separates concerns:
 Reason for this structure:
 - In swarm RL, failed projects often come from hidden coupling between environment logic and training code.
 - Strict interfaces (`obs`, `action`, `reward`, `done`, `info`) make migration to Isaac Sim significantly easier.
+
+### Dataset Requirement (Current Scope)
+
+No external dataset is required for the current simulation-first pipeline.
+
+Reason:
+- This project generates trajectories online by interacting with the environment.
+- "Data" in this stage means rollout episodes, checkpoints, and evaluation CSVs, not an offline labeled dataset.
+- If you later add offline imitation learning or perception modules, then external datasets become relevant.
 
 ## 2. End-to-End Pipeline (Complete Roadmap)
 
@@ -312,9 +324,12 @@ Core files:
 - `scripts/train_multi_agent.py`
 - `scripts/train_curriculum.py`
 - `scripts/evaluate_protocol.py`
+- `scripts/plot_metrics.py`
+- `scripts/watch_plot_metrics.py`
 - `src/swarm_marl/envs/single_drone_env.py`
 - `src/swarm_marl/envs/drone_swarm_env.py`
 - `src/swarm_marl/training/config_builders.py`
+- `src/swarm_marl/utils/ray_metrics.py`
 
 ## 8. Evaluation Protocol and Metrics
 
@@ -381,6 +396,8 @@ Reason:
 
 You can keep this file-only setup now and install later when ready.
 
+If you want the shortest command path, use `docs/RUNBOOK.md`.
+
 Base dependencies:
 ```powershell
 python -m pip install -r requirements.txt
@@ -406,9 +423,29 @@ Train single-agent baseline:
 python scripts/train_single_agent.py --iterations 50
 ```
 
+Single-agent quick debug run (faster iteration updates):
+```powershell
+python scripts/train_single_agent.py --iterations 20 --max-steps 120 --fast-debug
+```
+
+Single-agent run with explicit CSV logging:
+```powershell
+python scripts/train_single_agent.py --iterations 20 --fast-debug --metrics-csv reports/metrics/single_debug.csv
+```
+
 Train multi-agent baseline:
 ```powershell
 python scripts/train_multi_agent.py --iterations 100 --num-drones 5
+```
+
+Multi-agent quick debug run (faster iteration updates):
+```powershell
+python scripts/train_multi_agent.py --iterations 20 --num-drones 3 --num-obstacles 4 --max-steps 120 --fast-debug
+```
+
+Multi-agent run with explicit CSV logging:
+```powershell
+python scripts/train_multi_agent.py --iterations 20 --num-drones 3 --num-obstacles 4 --max-steps 120 --fast-debug --metrics-csv reports/metrics/multi_debug.csv
 ```
 
 Train with curriculum config:
@@ -416,10 +453,43 @@ Train with curriculum config:
 python scripts/train_curriculum.py --config configs/curriculum_v1.yaml
 ```
 
+Curriculum quick debug run:
+```powershell
+python scripts/train_curriculum.py --config configs/curriculum_v1.yaml --fast-debug
+```
+
 Evaluate a checkpoint against protocol scenarios:
 ```powershell
-python scripts/evaluate_protocol.py --checkpoint checkpoints/multi_agent/<checkpoint_dir> --protocol configs/eval_protocol_v1.yaml
+python scripts/evaluate_protocol.py --checkpoint "checkpoints/multi_agent" --protocol "configs/eval_protocol_v1.yaml" --output-csv "reports/metrics/eval_full.csv"
 ```
+
+Quick protocol (faster pass/fail check):
+```powershell
+python scripts/evaluate_protocol.py --checkpoint "checkpoints/multi_debug" --protocol "configs/eval_protocol_quick.yaml" --output-csv "reports/metrics/eval_quick.csv"
+```
+
+Tuning flags available on train scripts:
+- `--train-batch-size`
+- `--minibatch-size`
+- `--num-sgd-iter`
+- `--lr`
+- `--gamma`
+- `--metrics-csv`
+
+Generate progress plots from training CSV:
+```powershell
+python scripts/plot_metrics.py --input-csv reports/metrics/multi_debug.csv --output-png reports/plots/reward_curve_multi_debug.png --title "Multi-Agent Debug Training"
+```
+
+Auto-refresh plot while training is running:
+```powershell
+python scripts/watch_plot_metrics.py --input-csv reports/metrics/multi_debug.csv --output-png reports/plots/reward_curve_multi_debug_live.png --interval-sec 8 --title "Multi-Agent Live Progress"
+```
+
+Windows Ray note:
+- Messages about `metrics exporter agent` connection failures are usually non-fatal for local training runs.
+- In PowerShell commands, do not keep placeholder angle brackets (`<...>`). Replace them with an actual path string.
+- For path/restore failures, check `docs/TROUBLESHOOTING.md`.
 
 ## 13. Project Structure
 
@@ -433,13 +503,19 @@ python scripts/evaluate_protocol.py --checkpoint checkpoints/multi_agent/<checkp
 |   |-- train_single_agent.py
 |   |-- train_multi_agent.py
 |   |-- train_curriculum.py
+|   |-- plot_metrics.py
+|   |-- watch_plot_metrics.py
 |   `-- evaluate_protocol.py
 |-- docs/
+|   |-- README.md
+|   |-- RUNBOOK.md
+|   |-- TROUBLESHOOTING.md
 |   `-- EXPERIMENT_PLAN.md
 |-- configs/
 |   |-- curriculum_v1.yaml
 |   |-- domain_randomization_v1.yaml
-|   `-- eval_protocol_v1.yaml
+|   |-- eval_protocol_v1.yaml
+|   `-- eval_protocol_quick.yaml
 |-- reports/
 |   |-- templates/
 |   |   |-- WEEK_REPORT_TEMPLATE.md
@@ -456,7 +532,8 @@ python scripts/evaluate_protocol.py --checkpoint checkpoints/multi_agent/<checkp
 |       |   |-- single_drone_env.py
 |       |   `-- drone_swarm_env.py
 |       |-- utils/
-|       |   `-- config_io.py
+|       |   |-- config_io.py
+|       |   `-- ray_metrics.py
 |       `-- training/
 |           `-- config_builders.py
 `-- tests/

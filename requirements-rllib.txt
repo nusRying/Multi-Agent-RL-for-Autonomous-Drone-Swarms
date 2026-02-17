@@ -1,4 +1,4 @@
 # Install this later when you are ready for training runs.
 # Note: Ray RLlib wheels may depend on Python version support.
 ray[rllib]>=2.9
-
+pydantic>=2.0,<3

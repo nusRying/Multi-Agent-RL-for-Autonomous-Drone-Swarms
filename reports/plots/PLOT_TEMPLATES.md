@@ -28,12 +28,30 @@ Each figure should include:
 - `trajectory_overlay_<stage>.png`
 - `neighbor_distance_hist_<stage>.png`
 
-## Placeholder script target
+## Plot script
 
-When you add plotting code later, store it in:
+Use:
 - `scripts/plot_metrics.py`
 
-Expected inputs:
-- `reports/metrics/run_log_template.csv`
-- `reports/metrics/final_metrics_template.csv`
+Example:
+```powershell
+python scripts/plot_metrics.py --input-csv reports/metrics/train_multi_agent.csv --output-png reports/plots/reward_curve_multi_agent.png --title "Multi-Agent PPO Training"
+```
 
+Live refresh example:
+```powershell
+python scripts/watch_plot_metrics.py --input-csv reports/metrics/train_multi_agent.csv --output-png reports/plots/reward_curve_multi_agent_live.png --interval-sec 8 --title "Multi-Agent PPO Live"
+```
+
+Note:
+- `scripts/plot_metrics.py` strips broken user-site package paths before importing matplotlib (helpful on some Windows conda setups).
+
+Expected training CSV columns:
+- `iteration`
+- `episode_reward_mean`
+- `episode_len_mean`
+
+Defaults:
+- x-axis: `iteration`
+- y1: `episode_reward_mean`
+- y2: `episode_len_mean`

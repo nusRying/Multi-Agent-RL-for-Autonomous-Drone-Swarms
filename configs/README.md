@@ -10,6 +10,8 @@ This folder holds editable experiment configs so your runs are reproducible.
   - Physics and sensor randomization ranges.
 - `configs/eval_protocol_v1.yaml`
   - Seed list, metric thresholds, and evaluation episode counts.
+- `configs/eval_protocol_quick.yaml`
+  - Fast sanity-check protocol (small seed/episode budget).
 
 ## Usage pattern
 
@@ -19,6 +21,6 @@ This folder holds editable experiment configs so your runs are reproducible.
 
 ## Notes
 
-- Current training scripts use CLI args directly.
-- These files are designed for immediate documentation/reproducibility and easy integration when you add config loaders.
-
+- `scripts/train_curriculum.py` reads `curriculum_*.yaml` directly.
+- `scripts/evaluate_protocol.py` reads `eval_protocol_*.yaml` directly.
+- `scripts/train_single_agent.py` and `scripts/train_multi_agent.py` currently use CLI args.

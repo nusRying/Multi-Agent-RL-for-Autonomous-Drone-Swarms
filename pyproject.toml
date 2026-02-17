@@ -18,6 +18,8 @@ dependencies = [
 dev = [
   "pytest>=8.0",
   "ruff>=0.6",
+  "matplotlib>=3.8",
+  "tensorboard>=2.16",
 ]
 rllib = [
   "ray[rllib]>=2.9; python_version<'3.13'",

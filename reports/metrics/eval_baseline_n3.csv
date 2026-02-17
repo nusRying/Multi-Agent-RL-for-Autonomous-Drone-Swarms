@@ -1,0 +1,5 @@
+scenario_id,mode,episodes,success_rate,collision_free_rate,threshold_success_rate,threshold_collision_free_rate,pass_fail,mean_time_to_goal,formation_error,path_efficiency,episode_reward_mean,episode_reward_std,checkpoint_path
+single_agent_static,single,500,0.010000,0.930000,0.900000,0.950000,FAIL,127.000000,0.000000,343.857778,-10.805970,15.664725,C:\Users\umair\Videos\Multi-Agent RL for Autonomous Drone Swarms\checkpoints\multi_baseline_n3
+multi_agent_n3_static,multi,500,1.000000,1.000000,0.750000,0.800000,PASS,94.324000,5.323681,1.852687,-79.377519,72.596646,C:\Users\umair\Videos\Multi-Agent RL for Autonomous Drone Swarms\checkpoints\multi_baseline_n3
+multi_agent_n5_static,multi,500,1.000000,1.000000,0.700000,0.800000,PASS,53.252000,7.006091,12.362551,-59.716208,44.179190,C:\Users\umair\Videos\Multi-Agent RL for Autonomous Drone Swarms\checkpoints\multi_baseline_n3
+multi_agent_n8_hard,multi,500,1.000000,1.000000,0.600000,0.650000,PASS,35.488000,7.624061,10.971765,-42.549438,24.690521,C:\Users\umair\Videos\Multi-Agent RL for Autonomous Drone Swarms\checkpoints\multi_baseline_n3

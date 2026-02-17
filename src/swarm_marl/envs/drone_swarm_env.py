@@ -35,6 +35,7 @@ class DroneSwarmEnv(MultiAgentEnv):
         self.rng = np.random.default_rng(self.cfg.seed)
 
         self.agent_ids = [f"drone_{i}" for i in range(self.num_drones)]
+        self.agent_id_to_index = {agent_id: i for i, agent_id in enumerate(self.agent_ids)}
         self.agents = list(self.agent_ids)
 
         self._obs_dim = (
@@ -89,9 +90,17 @@ class DroneSwarmEnv(MultiAgentEnv):
         return observations, infos
 
     def step(self, action_dict: dict[str, np.ndarray]):
-        prev_distances = np.linalg.norm(self.goal[None, :] - self.positions, axis=1)
+        active_agent_ids = list(self.agents)
+        if not active_agent_ids:
+            return {}, {}, {"__all__": True}, {"__all__": False}, {}
 
-        for i, agent_id in enumerate(self.agent_ids):
+        active_indices = [self.agent_id_to_index[agent_id] for agent_id in active_agent_ids]
+        prev_distances = {
+            agent_id: float(np.linalg.norm(self.goal - self.positions[idx]))
+            for agent_id, idx in zip(active_agent_ids, active_indices)
+        }
+
+        for agent_id, i in zip(active_agent_ids, active_indices):
             raw_action = action_dict.get(agent_id, np.zeros(3, dtype=np.float32))
             action = np.asarray(raw_action, dtype=np.float32).reshape(3)
             action = np.clip(action, -1.0, 1.0)
@@ -108,10 +117,16 @@ class DroneSwarmEnv(MultiAgentEnv):
         )
         self.step_count += 1
 
-        curr_distances = np.linalg.norm(self.goal[None, :] - self.positions, axis=1)
-        reached = curr_distances <= self.cfg.goal_radius
-        collided = self._collision_mask()
-        formation_penalties = self._formation_penalties()
+        curr_distances = {
+            agent_id: float(np.linalg.norm(self.goal - self.positions[idx]))
+            for agent_id, idx in zip(active_agent_ids, active_indices)
+        }
+        reached = {
+            agent_id: curr_distances[agent_id] <= self.cfg.goal_radius
+            for agent_id in active_agent_ids
+        }
+        collided = self._collision_mask(active_indices)
+        formation_penalties = self._formation_penalties(active_indices)
 
         rewards: dict[str, float] = {}
         terminated: dict[str, bool] = {}
@@ -119,37 +134,42 @@ class DroneSwarmEnv(MultiAgentEnv):
         infos: dict[str, dict[str, Any]] = {}
         obs: dict[str, np.ndarray] = {}
 
-        any_collision = bool(np.any(collided))
-        all_reached = bool(np.all(reached))
+        any_collision = any(bool(collided[idx]) for idx in active_indices)
         time_limit = self.step_count >= self.cfg.max_steps
+        next_active_agents: list[str] = []
 
-        for i, agent_id in enumerate(self.agent_ids):
-            progress = (prev_distances[i] - curr_distances[i]) * self.cfg.reward_progress_scale
-            reward = progress + formation_penalties[i]
-            if reached[i]:
+        for agent_id, i in zip(active_agent_ids, active_indices):
+            progress = (prev_distances[agent_id] - curr_distances[agent_id]) * self.cfg.reward_progress_scale
+            reward = progress + formation_penalties.get(i, 0.0)
+            if reached[agent_id]:
                 reward += self.cfg.reward_goal
             if collided[i]:
                 reward += self.cfg.reward_collision
             rewards[agent_id] = float(reward)
 
-            done_agent = bool(reached[i] or collided[i])
+            done_agent = bool(reached[agent_id] or collided[i])
             terminated[agent_id] = done_agent
             truncated[agent_id] = bool(time_limit and not done_agent)
 
-            obs[agent_id] = self._build_obs(i)
-            infos[agent_id] = {
-                "distance_to_goal": float(curr_distances[i]),
-                "reached_goal": bool(reached[i]),
-                "collision": bool(collided[i]),
-                "global_state": self._global_state(),
-            }
+            if not done_agent and not time_limit and not any_collision:
+                obs[agent_id] = self._build_obs(i)
+                infos[agent_id] = {
+                    "distance_to_goal": curr_distances[agent_id],
+                    "reached_goal": bool(reached[agent_id]),
+                    "collision": bool(collided[i]),
+                    "global_state": self._global_state(),
+                }
+                next_active_agents.append(agent_id)
 
+        all_reached = len(next_active_agents) == 0 and not any_collision and not time_limit
         episode_done = bool(all_reached or any_collision)
         terminated["__all__"] = episode_done
         truncated["__all__"] = bool(time_limit and not episode_done)
 
         if terminated["__all__"] or truncated["__all__"]:
             self.agents = []
+        else:
+            self.agents = next_active_agents
 
         return obs, rewards, terminated, truncated, infos
 
@@ -162,33 +182,39 @@ class DroneSwarmEnv(MultiAgentEnv):
             return velocity
         return (velocity / speed) * self.cfg.max_speed
 
-    def _collision_mask(self) -> np.ndarray:
-        collisions = np.zeros(self.num_drones, dtype=bool)
+    def _collision_mask(self, active_indices: list[int]) -> dict[int, bool]:
+        collisions = {idx: False for idx in active_indices}
+        if not active_indices:
+            return collisions
 
         if self.cfg.num_obstacles > 0:
+            active_pos = self.positions[active_indices]
             dist_to_obstacles = np.linalg.norm(
-                self.positions[:, None, :] - self.obstacles[None, :, :],
+                active_pos[:, None, :] - self.obstacles[None, :, :],
                 axis=2,
             )
             threshold = self.cfg.collision_radius + self.cfg.obstacle_radius
-            collisions |= np.any(dist_to_obstacles <= threshold, axis=1)
+            obstacle_hits = np.any(dist_to_obstacles <= threshold, axis=1)
+            for local_i, idx in enumerate(active_indices):
+                if obstacle_hits[local_i]:
+                    collisions[idx] = True
 
-        if self.num_drones > 1:
-            for i in range(self.num_drones):
-                for j in range(i + 1, self.num_drones):
+        if len(active_indices) > 1:
+            for ai, i in enumerate(active_indices):
+                for j in active_indices[ai + 1 :]:
                     if np.linalg.norm(self.positions[i] - self.positions[j]) <= (2.0 * self.cfg.collision_radius):
                         collisions[i] = True
                         collisions[j] = True
         return collisions
 
-    def _formation_penalties(self) -> np.ndarray:
-        penalties = np.zeros(self.num_drones, dtype=np.float32)
-        if self.num_drones <= 1:
+    def _formation_penalties(self, active_indices: list[int]) -> dict[int, float]:
+        penalties = {idx: 0.0 for idx in active_indices}
+        if len(active_indices) <= 1:
             return penalties
 
-        for i in range(self.num_drones):
+        for i in active_indices:
             dists = []
-            for j in range(self.num_drones):
+            for j in active_indices:
                 if i == j:
                     continue
                 dists.append(float(np.linalg.norm(self.positions[i] - self.positions[j])))
@@ -274,4 +300,3 @@ class DroneSwarmEnv(MultiAgentEnv):
             ],
             axis=0,
         ).astype(np.float32)
-

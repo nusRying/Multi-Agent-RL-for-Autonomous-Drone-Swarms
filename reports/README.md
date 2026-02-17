@@ -19,8 +19,13 @@ This directory is the experiment evidence store for your portfolio and final pap
 2. Log every training/eval run in `reports/metrics/run_log_template.csv`.
 3. Update `reports/metrics/final_metrics_template.csv` only when milestone-level results are stable.
 4. For checkpoint benchmarking, run `scripts/evaluate_protocol.py` and merge output into final metrics.
-5. Generate and store plots using names in `reports/plots/PLOT_TEMPLATES.md`.
+5. Generate and store plots using names in `reports/plots/PLOT_TEMPLATES.md`, `scripts/plot_metrics.py`, and `scripts/watch_plot_metrics.py`.
 6. At project end, copy `reports/templates/FINAL_REPORT_TEMPLATE.md` to `reports/final_report.md`.
+
+## Generated files in this repo
+
+You may already see generated CSVs (for example `multi_debug.csv`, `eval_baseline_n3.csv`, `curriculum_runs.csv`).
+Treat them as run artifacts/examples, not fixed templates.
 
 ## Minimum evidence checklist
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import math
+import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,6 +11,9 @@ from statistics import mean, pstdev
 from typing import Any
 
 import numpy as np
+
+os.environ.setdefault("RLLIB_TEST_NO_TF_IMPORT", "1")
+os.environ.setdefault("RLLIB_TEST_NO_JAX_IMPORT", "1")
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
@@ -97,9 +101,56 @@ def _formation_error_from_positions(positions: dict[str, np.ndarray], desired_sp
 
 
 def _extract_checkpoint_path(path: Path) -> str:
-    if not path.exists():
+    resolved = path.expanduser().resolve()
+    if not resolved.exists():
         raise FileNotFoundError(f"Checkpoint path does not exist: {path}")
-    return str(path)
+
+    if resolved.is_file() and resolved.name == "algorithm_state.pkl":
+        resolved = resolved.parent
+
+    if resolved.is_dir() and not (resolved / "algorithm_state.pkl").exists():
+        candidates = sorted(
+            resolved.rglob("algorithm_state.pkl"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        if not candidates:
+            raise FileNotFoundError(
+                f"No algorithm_state.pkl found under checkpoint path: {resolved}"
+            )
+        resolved = candidates[0].parent
+        print(f"Auto-selected checkpoint directory: {resolved}")
+
+    # Use absolute local filesystem path (not file:// URI).
+    return str(resolved)
+
+
+def _restore_algo(algo: Any, checkpoint_path: str) -> None:
+    candidate_paths = [checkpoint_path]
+
+    try:
+        p = Path(checkpoint_path)
+        posix_path = p.as_posix()
+        if posix_path not in candidate_paths:
+            candidate_paths.append(posix_path)
+        uri = p.as_uri()
+        if uri not in candidate_paths:
+            candidate_paths.append(uri)
+    except Exception:
+        pass
+
+    errors: list[str] = []
+    for candidate in candidate_paths:
+        try:
+            algo.restore(candidate)
+            if candidate != checkpoint_path:
+                print(f"Restored checkpoint using fallback path format: {candidate}")
+            return
+        except Exception as exc:  # pragma: no cover - depends on ray/pyarrow internals
+            errors.append(f"{candidate} -> {exc}")
+
+    joined = "\n".join(errors)
+    raise RuntimeError(f"Failed to restore checkpoint from all path formats:\n{joined}")
 
 
 def _build_algo(mode: str, env_name: str, env_config: dict[str, Any], num_workers: int):
@@ -321,7 +372,7 @@ def main() -> None:
             algo_env_cfg["seed"] = int(seeds[0])
 
             algo = _build_algo(mode, env_name, algo_env_cfg, args.num_workers)
-            algo.restore(checkpoint_path)
+            _restore_algo(algo, checkpoint_path)
 
             episodes: list[EpisodeSummary] = []
             for seed in seeds:

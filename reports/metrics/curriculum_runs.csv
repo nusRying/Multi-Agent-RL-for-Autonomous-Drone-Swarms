@@ -1,0 +1,6 @@
+curriculum_name,stage_id,stage_name,iterations,reward_mean_final,episode_len_mean_final,checkpoint_path
+curriculum_v1_static_to_dense,1,n3_empty,50,-329.957732,119.910000,checkpoints\curriculum_v1\stage_1_n3_empty
+curriculum_v1_static_to_dense,1,n3_empty,50,-220.394656,81.930000,C:\Users\umair\Videos\Multi-Agent RL for Autonomous Drone Swarms\checkpoints\curriculum_v1\stage_1_n3_empty
+curriculum_v1_static_to_dense,2,n3_sparse,75,-211.954486,90.790000,C:\Users\umair\Videos\Multi-Agent RL for Autonomous Drone Swarms\checkpoints\curriculum_v1\stage_2_n3_sparse
+curriculum_v1_static_to_dense,3,n5_static,100,-409.325950,71.570000,C:\Users\umair\Videos\Multi-Agent RL for Autonomous Drone Swarms\checkpoints\curriculum_v1\stage_3_n5_static
+curriculum_v1_static_to_dense,4,n8_dense,150,-573.610005,49.180000,C:\Users\umair\Videos\Multi-Agent RL for Autonomous Drone Swarms\checkpoints\curriculum_v1\stage_4_n8_dense

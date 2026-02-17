@@ -15,7 +15,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from swarm_marl.envs import SingleDroneEnv
+from swarm_marl.envs import DroneSwarmEnv
 from swarm_marl.utils import extract_episode_stats
 
 try:
@@ -27,26 +27,28 @@ except ModuleNotFoundError as exc:
         "on Python 3.10-3.12."
     ) from exc
 
-from swarm_marl.training import build_single_agent_ppo_config
+from swarm_marl.training.config_builders import build_ctde_ppo_config
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train a single-drone PPO baseline.")
-    parser.add_argument("--iterations", type=int, default=50, help="Number of PPO training iterations.")
+    parser = argparse.ArgumentParser(description="Train multi-agent swarm with CTDE PPO.")
+    parser.add_argument("--iterations", type=int, default=100, help="Number of PPO training iterations.")
     parser.add_argument("--num-workers", type=int, default=0, help="RLlib rollout workers.")
-    parser.add_argument("--seed", type=int, default=7, help="Random seed for the environment.")
+    parser.add_argument("--num-drones", type=int, default=3, help="Number of drones in swarm.")
+    parser.add_argument("--num-obstacles", type=int, default=8, help="Number of static obstacles.")
     parser.add_argument("--max-steps", type=int, default=400, help="Episode step limit.")
-    parser.add_argument("--checkpoint-dir", type=Path, default=Path("checkpoints/single_agent"))
+    parser.add_argument("--seed", type=int, default=7, help="Random seed.")
+    parser.add_argument("--checkpoint-dir", type=Path, default=Path("checkpoints/ctde_run"))
     parser.add_argument(
         "--metrics-csv",
         type=Path,
-        default=Path("reports/metrics/train_single_agent.csv"),
+        default=Path("reports/metrics/train_ctde.csv"),
         help="CSV file to append per-iteration metrics.",
     )
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor.")
     parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate.")
-    parser.add_argument("--train-batch-size", type=int, default=8192, help="PPO train batch size.")
-    parser.add_argument("--minibatch-size", type=int, default=1024, help="PPO minibatch size.")
+    parser.add_argument("--train-batch-size", type=int, default=16384, help="PPO train batch size.")
+    parser.add_argument("--minibatch-size", type=int, default=2048, help="PPO minibatch size.")
     parser.add_argument("--num-sgd-iter", type=int, default=10, help="PPO SGD epochs/iterations.")
     parser.add_argument(
         "--fast-debug",
@@ -78,21 +80,23 @@ def _to_float(value: Any, default: float = 0.0) -> float:
 def main() -> None:
     args = parse_args()
     if args.fast_debug:
-        args.train_batch_size = 2048
-        args.minibatch_size = 256
+        args.train_batch_size = 4096
+        args.minibatch_size = 512
         args.num_sgd_iter = 2
 
-    env_name = "single_drone_v0"
+    env_name = "drone_swarm_v0"
 
     env_config = {
+        "num_drones": args.num_drones,
+        "num_obstacles": args.num_obstacles,
         "max_steps": args.max_steps,
         "seed": args.seed,
     }
 
-    register_env(env_name, lambda cfg: SingleDroneEnv(cfg))
+    register_env(env_name, lambda cfg: DroneSwarmEnv(cfg))
     ray.init(ignore_reinit_error=True, include_dashboard=False)
 
-    config = build_single_agent_ppo_config(
+    config = build_ctde_ppo_config(
         env_name=env_name,
         env_config=env_config,
         num_workers=args.num_workers,
@@ -106,10 +110,9 @@ def main() -> None:
 
     args.checkpoint_dir.mkdir(parents=True, exist_ok=True)
     print(
-        f"Training single-drone PPO for {args.iterations} iterations "
-        f"(max_steps={args.max_steps}, workers={args.num_workers}, "
-        f"batch={args.train_batch_size}, minibatch={args.minibatch_size}, "
-        f"sgd_iter={args.num_sgd_iter}, lr={args.lr}, gamma={args.gamma})"
+        f"Training CTDE PPO for {args.iterations} iterations "
+        f"(drones={args.num_drones}, obstacles={args.num_obstacles}, "
+        f"batch={args.train_batch_size}, minibatch={args.minibatch_size})"
     )
     csv_fields = [
         "iteration",
@@ -122,6 +125,8 @@ def main() -> None:
         "train_batch_size",
         "minibatch_size",
         "num_sgd_iter",
+        "num_drones",
+        "num_obstacles",
         "max_steps",
         "seed",
     ]
@@ -142,6 +147,8 @@ def main() -> None:
                 "train_batch_size": args.train_batch_size,
                 "minibatch_size": args.minibatch_size,
                 "num_sgd_iter": args.num_sgd_iter,
+                "num_drones": args.num_drones,
+                "num_obstacles": args.num_obstacles,
                 "max_steps": args.max_steps,
                 "seed": args.seed,
             },

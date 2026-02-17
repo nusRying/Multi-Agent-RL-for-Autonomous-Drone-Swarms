@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import argparse
 import csv
+import os
 import sys
 from pathlib import Path
 from typing import Any
+
+os.environ.setdefault("RLLIB_TEST_NO_TF_IMPORT", "1")
+os.environ.setdefault("RLLIB_TEST_NO_JAX_IMPORT", "1")
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
@@ -13,7 +17,7 @@ if str(SRC) not in sys.path:
 
 from swarm_marl.envs import DroneSwarmEnv
 from swarm_marl.training import build_multi_agent_ppo_config
-from swarm_marl.utils import load_structured_config
+from swarm_marl.utils import extract_episode_stats, load_structured_config
 
 try:
     import ray
@@ -35,6 +39,16 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--num-workers", type=int, default=0, help="RLlib rollout workers.")
     parser.add_argument("--seed", type=int, default=7, help="Base random seed.")
+    parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor.")
+    parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate.")
+    parser.add_argument("--train-batch-size", type=int, default=16384, help="PPO train batch size.")
+    parser.add_argument("--minibatch-size", type=int, default=2048, help="PPO minibatch size.")
+    parser.add_argument("--num-sgd-iter", type=int, default=10, help="PPO SGD epochs/iterations.")
+    parser.add_argument(
+        "--fast-debug",
+        action="store_true",
+        help="Use a much smaller PPO profile for faster per-iteration feedback.",
+    )
     parser.add_argument(
         "--checkpoint-root",
         type=Path,
@@ -51,17 +65,77 @@ def parse_args() -> argparse.Namespace:
 
 
 def _normalize_checkpoint_path(raw: Any) -> str:
+    raw_path: str
     if isinstance(raw, str):
-        return raw
-    if hasattr(raw, "path"):
-        return str(raw.path)
-    if hasattr(raw, "checkpoint"):
+        raw_path = raw
+    elif hasattr(raw, "path"):
+        raw_path = str(raw.path)
+    elif hasattr(raw, "checkpoint"):
         checkpoint = raw.checkpoint
         if isinstance(checkpoint, str):
-            return checkpoint
-        if hasattr(checkpoint, "path"):
-            return str(checkpoint.path)
-    return str(raw)
+            raw_path = checkpoint
+        elif hasattr(checkpoint, "path"):
+            raw_path = str(checkpoint.path)
+        else:
+            raw_path = str(raw)
+    else:
+        raw_path = str(raw)
+
+    return str(_resolve_checkpoint_dir(raw_path))
+
+
+def _resolve_checkpoint_dir(path_like: str | Path) -> Path:
+    resolved = Path(path_like).expanduser().resolve()
+    if not resolved.exists():
+        raise FileNotFoundError(f"Checkpoint path does not exist: {path_like}")
+
+    if resolved.is_file() and resolved.name == "algorithm_state.pkl":
+        return resolved.parent
+
+    if resolved.is_dir() and not (resolved / "algorithm_state.pkl").exists():
+        candidates = sorted(
+            resolved.rglob("algorithm_state.pkl"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        if not candidates:
+            raise FileNotFoundError(
+                f"No algorithm_state.pkl found under checkpoint path: {resolved}"
+            )
+        selected = candidates[0].parent
+        print(f"Auto-selected checkpoint directory: {selected}")
+        return selected
+
+    return resolved
+
+
+def _restore_algo(algo: Any, checkpoint_path: str) -> None:
+    resolved = _resolve_checkpoint_dir(checkpoint_path)
+    candidates = [str(resolved)]
+
+    posix_path = resolved.as_posix()
+    if posix_path not in candidates:
+        candidates.append(posix_path)
+
+    try:
+        uri = resolved.as_uri()
+        if uri not in candidates:
+            candidates.append(uri)
+    except ValueError:
+        pass
+
+    errors: list[str] = []
+    for candidate in candidates:
+        try:
+            algo.restore(candidate)
+            if candidate != str(resolved):
+                print(f"Restored checkpoint using fallback path format: {candidate}")
+            return
+        except Exception as exc:  # pragma: no cover - depends on ray/pyarrow internals
+            errors.append(f"{candidate} -> {exc}")
+
+    joined = "\n".join(errors)
+    raise RuntimeError(f"Failed to restore checkpoint from all path formats:\n{joined}")
 
 
 def _append_csv_row(path: Path, row: dict[str, Any], fieldnames: list[str]) -> None:
@@ -76,6 +150,11 @@ def _append_csv_row(path: Path, row: dict[str, Any], fieldnames: list[str]) -> N
 
 def main() -> None:
     args = parse_args()
+    if args.fast_debug:
+        args.train_batch_size = 4096
+        args.minibatch_size = 512
+        args.num_sgd_iter = 2
+
     cfg = load_structured_config(args.config)
     stages = cfg.get("stages", [])
     if not isinstance(stages, list) or not stages:
@@ -117,19 +196,23 @@ def main() -> None:
                 env_name=env_name,
                 env_config=env_cfg,
                 num_workers=args.num_workers,
+                gamma=args.gamma,
+                lr=args.lr,
+                train_batch_size=args.train_batch_size,
+                minibatch_size=args.minibatch_size,
+                num_sgd_iter=args.num_sgd_iter,
             )
             algo = algo_cfg.build()
 
             if prev_checkpoint_path:
                 print(f"Restoring previous stage weights: {prev_checkpoint_path}")
-                algo.restore(prev_checkpoint_path)
+                _restore_algo(algo, prev_checkpoint_path)
 
             last_reward = 0.0
             last_len = 0.0
             for i in range(1, stage_iterations + 1):
                 result = algo.train()
-                last_reward = float(result.get("episode_reward_mean", 0.0))
-                last_len = float(result.get("episode_len_mean", 0.0))
+                last_reward, last_len = extract_episode_stats(result)
                 print(
                     f"stage={stage_name} iter={i:04d} "
                     f"reward_mean={last_reward:9.3f} len_mean={last_len:7.2f}"
@@ -161,4 +244,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
