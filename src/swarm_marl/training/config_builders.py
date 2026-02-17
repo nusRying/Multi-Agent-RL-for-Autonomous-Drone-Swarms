@@ -16,11 +16,11 @@ from swarm_marl.training.models import CentralizedCriticModel
 from swarm_marl.training.callbacks import GlobalStateCallback
 
 
-def _set_worker_config(config: PPOConfig, num_workers: int) -> PPOConfig:
+def _set_worker_config(config: PPOConfig, num_workers: int, num_gpus: float = 0) -> PPOConfig:
     # Ray >=2.5x replaced `rollouts` with `env_runners`.
     if hasattr(config, "env_runners"):
-        return config.env_runners(num_env_runners=num_workers)
-    return config.rollouts(num_rollout_workers=num_workers)
+        return config.env_runners(num_env_runners=num_workers).resources(num_gpus=num_gpus)
+    return config.rollouts(num_rollout_workers=num_workers).resources(num_gpus=num_gpus)
 
 
 def _disable_new_api_stack_if_available(config: PPOConfig) -> PPOConfig:
@@ -144,6 +144,7 @@ def build_ctde_ppo_config(
     env_name: str,
     env_config: dict[str, Any] | None = None,
     num_workers: int = 0,
+    num_gpus: float = 0,
     gamma: float = 0.99,
     lr: float = 3e-4,
     train_batch_size: int = 16384,
@@ -195,4 +196,4 @@ def build_ctde_ppo_config(
         minibatch_size=minibatch_size,
         num_sgd_iter=num_sgd_iter,
     )
-    return _set_worker_config(cfg, num_workers)
+    return _set_worker_config(cfg, num_workers, num_gpus=num_gpus)

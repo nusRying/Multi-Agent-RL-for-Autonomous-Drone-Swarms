@@ -163,7 +163,8 @@ class DronePhysicsEnv(MultiAgentEnv):
             # If we want 0 action to be hovering, we add [0, 0, 9.81].
             # But let's let generic RL learn it or assume 0 is hover.
             # Let's add gravity comp for easier transfer.
-            force[2] += 9.81
+            # Let's add gravity comp for easier transfer.
+            # force[2] += 9.81 # REMOVED for physics sanity check (expecting zero action = fall)
             
             # Apply force to COM
             # PyBullet applies force in world frame by default? No, usually local/world flag.
@@ -194,30 +195,54 @@ class DronePhysicsEnv(MultiAgentEnv):
             is_collision = len(contacts) > 0
             collided[agent_id] = is_collision
             
-        # Terminations
+        # Terminations - FIXED to end episode on ANY collision
+        any_collision = False
+        all_goals_reached = True
+        
         for agent_id in active_agents:
             idx = self.agent_ids.index(agent_id)
             pos, _ = p.getBasePositionAndOrientation(self.drone_ids[idx])
             dist = np.linalg.norm(np.array(pos) - self.goal)
             
-            reward = -dist * 0.1 # Simple dense reward
+            reward = -dist * 0.1  # Simple dense reward
             rewards[agent_id] = reward
             
-            terminated[agent_id] = False
-            truncated[agent_id] = self.step_count >= self.cfg.max_steps
-            
+            # Check collision
             if collided[agent_id]:
                 rewards[agent_id] -= 10.0
-                terminated[agent_id] = True
+                any_collision = True
+            # Check goal reached
             elif dist < self.cfg.goal_radius:
                 rewards[agent_id] += 50.0
-                terminated[agent_id] = True
-                
-        terminated["__all__"] = all(terminated.values())
-        truncated["__all__"] = all(truncated.values())
+            else:
+                all_goals_reached = False
         
-        if terminated["__all__"] or truncated["__all__"]:
+        # Episode termination logic
+        time_limit = self.step_count >= self.cfg.max_steps
+        episode_done = any_collision or all_goals_reached or time_limit
+        
+        if episode_done:
+            # Mark ALL agents with consistent done flags
+            for agent_id in self.agent_ids:
+                if time_limit and not any_collision and not all_goals_reached:
+                    # Pure time limit (no collision, not all goals)
+                    terminated[agent_id] = False
+                    truncated[agent_id] = True
+                else:
+                    # Collision or all goals reached
+                    terminated[agent_id] = True
+                    truncated[agent_id] = False
+            
+            terminated["__all__"] = True if (any_collision or all_goals_reached) else False
+            truncated["__all__"] = True if (time_limit and not any_collision and not all_goals_reached) else False
             self.agents = []
+        else:
+            # Episode continues
+            for agent_id in self.agent_ids:
+                terminated[agent_id] = False
+                truncated[agent_id] = False
+            terminated["__all__"] = False
+            truncated["__all__"] = False
             
         return obs, rewards, terminated, truncated, infos
         

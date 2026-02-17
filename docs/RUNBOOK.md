@@ -58,7 +58,50 @@ python scripts/evaluate_protocol.py `
   --output-csv "reports/metrics/eval_full.csv"
 ```
 
-## 7. Curriculum Training
+## 7. CTDE Training (Centralized Critic)
+
+```powershell
+python scripts/train_ctde.py `
+  --iterations 100 `
+  --num-drones 3 `
+  --checkpoint-dir checkpoints/ctde_run `
+  --metrics-csv reports/metrics/train_ctde.csv
+```
+
+## 8. Attention Training (CTDE + Attention)
+
+```powershell
+python scripts/train_attention.py `
+  --iterations 200 `
+  --num-workers 2 `
+  --checkpoint-dir checkpoints/attention_run `
+  --metrics-csv reports/metrics/train_attention.csv
+```
+
+## 9. Physics Training (PyBullet Environment)
+
+```powershell
+python scripts/train_physics.py `
+  --iterations 200 `
+  --num-workers 2 `
+  --num-gpus 1 `
+  --checkpoint-dir checkpoints/physics_run `
+  --metrics-csv reports/metrics/train_physics.csv
+```
+
+## 10. Visualize Physics Simulation
+
+```powershell
+python scripts/run_physics_gui.py
+```
+
+## 11. Visualize Trained Swarm Behavior
+
+```powershell
+python scripts/visualize_swarm.py --checkpoint checkpoints/ctde_run
+```
+
+## 12. Curriculum Training
 
 ```powershell
 python scripts/train_curriculum.py `
@@ -70,7 +113,8 @@ python scripts/train_curriculum.py `
 
 ## Notes
 
+- **GPU Support**: All training scripts (`train_attention.py`, `train_physics.py`, etc.) automatically detect and use GPU if available.
 - You can pass either a direct checkpoint folder or a parent folder. Scripts now auto-detect nested checkpoint directories.
 - Ray warnings about metrics exporter agent on Windows are noisy but usually non-fatal.
+- Physics simulation (`train_physics.py`) is slower than point-mass environments due to PyBullet overhead.
 - If you see errors, check `docs/TROUBLESHOOTING.md`.
-

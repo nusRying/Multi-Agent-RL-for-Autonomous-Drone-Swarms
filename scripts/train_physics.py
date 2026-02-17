@@ -15,7 +15,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from swarm_marl.envs import DroneSwarmEnv
+from swarm_marl.envs.drone_physics_env import DronePhysicsEnv
 from swarm_marl.utils import extract_episode_stats
 
 try:
@@ -31,31 +31,30 @@ from swarm_marl.training.config_builders import build_ctde_ppo_config
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train multi-agent swarm with CTDE + Attention PPO.")
+    parser = argparse.ArgumentParser(description="Train multi-agent swarm in Physics Env.")
     parser.add_argument("--iterations", type=int, default=100, help="Number of PPO training iterations.")
-    parser.add_argument("--num-workers", type=int, default=0, help="RLlib rollout workers.")
+    parser.add_argument("--num-workers", type=int, default=0, help="RLlib rollout workers (0=local only, recommended for PyBullet).")
     parser.add_argument("--num-drones", type=int, default=3, help="Number of drones in swarm.")
     parser.add_argument("--num-obstacles", type=int, default=8, help="Number of static obstacles.")
     parser.add_argument("--max-steps", type=int, default=400, help="Episode step limit.")
     parser.add_argument("--seed", type=int, default=7, help="Random seed.")
-    # Default to 1 GPU if available
     try:
         import torch
         default_gpus = 1 if torch.cuda.is_available() else 0
     except ImportError:
         default_gpus = 0
-    parser.add_argument("--num-gpus", type=float, default=default_gpus, help="Number of GPUs to use.")
-    parser.add_argument("--checkpoint-dir", type=Path, default=Path("checkpoints/attention_run"))
+    parser.add_argument("--num-gpus", type=float, default=default_gpus, help="Number of GPUs to use for training.")
+    parser.add_argument("--checkpoint-dir", type=Path, default=Path("checkpoints/physics_run"))
     parser.add_argument(
         "--metrics-csv",
         type=Path,
-        default=Path("reports/metrics/train_attention.csv"),
+        default=Path("reports/metrics/train_physics.csv"),
         help="CSV file to append per-iteration metrics.",
     )
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor.")
     parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate.")
-    parser.add_argument("--train-batch-size", type=int, default=16384, help="PPO train batch size.")
-    parser.add_argument("--minibatch-size", type=int, default=2048, help="PPO minibatch size.")
+    parser.add_argument("--train-batch-size", type=int, default=4000, help="PPO train batch size (smaller for physics).")
+    parser.add_argument("--minibatch-size", type=int, default=128, help="PPO minibatch size.")
     parser.add_argument("--num-sgd-iter", type=int, default=10, help="PPO SGD epochs/iterations.")
     parser.add_argument(
         "--fast-debug",
@@ -86,27 +85,54 @@ def _to_float(value: Any, default: float = 0.0) -> float:
 
 def main() -> None:
     args = parse_args()
+    
+    # GPU Diagnostics
+    print("\n" + "="*60)
+    print("GPU CONFIGURATION")
+    print("="*60)
+    try:
+        import torch
+        cuda_available = torch.cuda.is_available()
+        print(f"PyTorch CUDA Available: {cuda_available}")
+        if cuda_available:
+            print(f"CUDA Device: {torch.cuda.get_device_name(0)}")
+            print(f"CUDA Version: {torch.version.cuda}")
+            print(f"Requested GPUs: {args.num_gpus}")
+        else:
+            print("WARNING: CUDA not available, training on CPU")
+            args.num_gpus = 0
+    except ImportError:
+        print("PyTorch not available for GPU check")
+        args.num_gpus = 0
+    print("="*60 + "\n")
+    
     if args.fast_debug:
-        args.train_batch_size = 4096
-        args.minibatch_size = 512
+        args.train_batch_size = 1000
+        args.minibatch_size = 64
         args.num_sgd_iter = 2
 
-    env_name = "drone_swarm_v0"
+    env_name = "drone_physics_v0"
 
     env_config = {
         "num_drones": args.num_drones,
         "num_obstacles": args.num_obstacles,
         "max_steps": args.max_steps,
         "seed": args.seed,
+        "gui": False, # Always headless for training
     }
 
-    register_env(env_name, lambda cfg: DroneSwarmEnv(cfg))
+    # Register the Physics Env
+    register_env(env_name, lambda cfg: DronePhysicsEnv(cfg))
+    
+    # Configure Ray runtime_env to ensure workers can import swarm_marl
     ray.init(
         ignore_reinit_error=True, 
         include_dashboard=False,
         runtime_env={"env_vars": {"PYTHONPATH": str(SRC)}}
     )
 
+    # Use CTDE config builder but point to our new env
+    # Note: Physics env has same observation space structure so CTDE model works!
     config = build_ctde_ppo_config(
         env_name=env_name,
         env_config=env_config,
@@ -119,21 +145,21 @@ def main() -> None:
         num_sgd_iter=args.num_sgd_iter,
     )
     
-    # ENABLE ATTENTION
-    # Retrieve the shared policy spec and modify its config
-    policy_spec = config.policies["shared_policy"]
-    policy_spec.config["model"]["custom_model_config"]["use_attention"] = True
-    # Update the config with the modified policy
-    config.multi_agent(policies={"shared_policy": policy_spec})
+    # We can also enable Attention here if we want!
+    # Let's keep it simple (CTDE only) for the first physics run to isolate variables.
 
     algo = config.build()
 
     args.checkpoint_dir.mkdir(parents=True, exist_ok=True)
     print(
-        f"Training CTDE+Attention PPO for {args.iterations} iterations "
-        f"(drones={args.num_drones}, obstacles={args.num_obstacles}, "
-        f"batch={args.train_batch_size}, minibatch={args.minibatch_size})"
+        f"\nTraining Physics PPO for {args.iterations} iterations"
     )
+    print(f"  Drones: {args.num_drones}")
+    print(f"  Obstacles: {args.num_obstacles}")
+    print(f"  Workers: {args.num_workers} (0=local only)")
+    print(f"  GPUs: {args.num_gpus}")
+    print(f"  Batch: {args.train_batch_size}, Minibatch: {args.minibatch_size}")
+    print()
     csv_fields = [
         "iteration",
         "episode_reward_mean",
@@ -149,7 +175,6 @@ def main() -> None:
         "num_obstacles",
         "max_steps",
         "seed",
-        "use_attention",
     ]
     for i in range(1, args.iterations + 1):
         result = algo.train()
@@ -172,10 +197,14 @@ def main() -> None:
                 "num_obstacles": args.num_obstacles,
                 "max_steps": args.max_steps,
                 "seed": args.seed,
-                "use_attention": True,
             },
             csv_fields,
         )
+        
+        # Save checkpoint more frequently for physics?
+        if i % 10 == 0:
+            checkpoint = algo.save(str(args.checkpoint_dir))
+            print(f"Saved checkpoint: {checkpoint}")
 
     checkpoint = algo.save(str(args.checkpoint_dir))
     print(f"Saved checkpoint: {checkpoint}")
