@@ -15,6 +15,8 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+import pandas as pd
+
 from swarm_marl.envs import DroneSwarmEnv
 from swarm_marl.utils import extract_episode_stats
 
@@ -38,6 +40,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--num-obstacles", type=int, default=8, help="Number of static obstacles.")
     parser.add_argument("--max-steps", type=int, default=400, help="Episode step limit.")
     parser.add_argument("--seed", type=int, default=7, help="Random seed.")
+    try:
+        import torch
+        default_gpus = 1 if torch.cuda.is_available() else 0
+    except ImportError:
+        default_gpus = 0
+    parser.add_argument("--num-gpus", type=float, default=default_gpus, help="Number of GPUs to use for training.")
     parser.add_argument("--checkpoint-dir", type=Path, default=Path("checkpoints/ctde_run"))
     parser.add_argument(
         "--metrics-csv",
@@ -79,6 +87,27 @@ def _to_float(value: Any, default: float = 0.0) -> float:
 
 def main() -> None:
     args = parse_args()
+    
+    # GPU Diagnostics
+    print("\n" + "="*60)
+    print("GPU CONFIGURATION")
+    print("="*60)
+    try:
+        import torch
+        cuda_available = torch.cuda.is_available()
+        print(f"PyTorch CUDA Available: {cuda_available}")
+        if cuda_available:
+            print(f"CUDA Device: {torch.cuda.get_device_name(0)}")
+            print(f"CUDA Version: {torch.version.cuda}")
+            print(f"Requested GPUs: {args.num_gpus}")
+        else:
+            print("WARNING: CUDA not available, training on CPU")
+            args.num_gpus = 0
+    except ImportError:
+        print("PyTorch not available for GPU check")
+        args.num_gpus = 0
+    print("="*60 + "\n")
+    
     if args.fast_debug:
         args.train_batch_size = 4096
         args.minibatch_size = 512
@@ -94,12 +123,17 @@ def main() -> None:
     }
 
     register_env(env_name, lambda cfg: DroneSwarmEnv(cfg))
-    ray.init(ignore_reinit_error=True, include_dashboard=False)
+    ray.init(
+        ignore_reinit_error=True, 
+        include_dashboard=False,
+        runtime_env={"env_vars": {"PYTHONPATH": str(SRC)}}
+    )
 
     config = build_ctde_ppo_config(
         env_name=env_name,
         env_config=env_config,
         num_workers=args.num_workers,
+        num_gpus=args.num_gpus,
         gamma=args.gamma,
         lr=args.lr,
         train_batch_size=args.train_batch_size,
@@ -107,12 +141,41 @@ def main() -> None:
         num_sgd_iter=args.num_sgd_iter,
     )
     algo = config.build()
+    
+    # Check for existing checkpoint and CSV to resume
+    start_iteration = 0
+    checkpoint_path = args.checkpoint_dir / "rllib_checkpoint.json"
+    print(f"Checking for checkpoint at: {checkpoint_path.absolute()}")
+    if checkpoint_path.exists():
+        print(f"Found existing checkpoint at {args.checkpoint_dir}, resuming...")
+        try:
+            # RLlib on Windows needs absolute paths to avoid Arrow URI errors
+            abs_checkpoint_dir = str(args.checkpoint_dir.absolute())
+            algo.restore(abs_checkpoint_dir)
+            
+            # Use CSV as source of truth for iteration count
+            if args.metrics_csv.exists():
+                try:
+                    df = pd.read_csv(args.metrics_csv)
+                    if not df.empty:
+                        start_iteration = int(df["iteration"].max())
+                        print(f"  Resuming from iteration {start_iteration} (found in CSV)")
+                except Exception as csv_e:
+                    print(f"  WARNING: Could not read iteration from CSV: {csv_e}")
+                    # Fallback to internal counter if CSV fails
+                    if hasattr(algo, "iteration"):
+                        start_iteration = algo.iteration
+            
+        except Exception as e:
+            print(f"  WARNING: Failed to restore checkpoint: {e}")
+            print("  Starting from scratch instead.")
 
     args.checkpoint_dir.mkdir(parents=True, exist_ok=True)
     print(
-        f"Training CTDE PPO for {args.iterations} iterations "
-        f"(drones={args.num_drones}, obstacles={args.num_obstacles}, "
-        f"batch={args.train_batch_size}, minibatch={args.minibatch_size})"
+        f"DEBUG: Final start_iteration = {start_iteration}"
+    )
+    print(
+        f"Training CTDE PPO from iteration {start_iteration + 1} to {args.iterations}"
     )
     csv_fields = [
         "iteration",
@@ -130,14 +193,16 @@ def main() -> None:
         "max_steps",
         "seed",
     ]
-    for i in range(1, args.iterations + 1):
+    curr_iter = start_iteration
+    while curr_iter < args.iterations:
+        curr_iter += 1
         result = algo.train()
         reward_mean, length_mean = extract_episode_stats(result)
-        print(f"iter={i:04d} reward_mean={reward_mean:9.3f} len_mean={length_mean:7.2f}")
+        print(f"iter={curr_iter:04d} reward_mean={reward_mean:9.3f} len_mean={length_mean:7.2f}")
         _append_csv_row(
             args.metrics_csv,
             {
-                "iteration": i,
+                "iteration": curr_iter,
                 "episode_reward_mean": f"{reward_mean:.6f}",
                 "episode_len_mean": f"{length_mean:.6f}",
                 "timesteps_total": int(_to_float(result.get("timesteps_total", 0), 0.0)),

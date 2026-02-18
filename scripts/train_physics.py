@@ -15,6 +15,8 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+import pandas as pd
+
 from swarm_marl.envs.drone_physics_env import DronePhysicsEnv
 from swarm_marl.utils import extract_episode_stats
 
@@ -149,10 +151,37 @@ def main() -> None:
     # Let's keep it simple (CTDE only) for the first physics run to isolate variables.
 
     algo = config.build()
+    
+    # Check for existing checkpoint and CSV to resume
+    start_iteration = 0
+    checkpoint_path = args.checkpoint_dir / "rllib_checkpoint.json"
+    if checkpoint_path.exists():
+        print(f"\nFound existing checkpoint at {args.checkpoint_dir}, resuming...")
+        try:
+            # RLlib on Windows needs absolute paths to avoid Arrow URI errors
+            abs_checkpoint_dir = str(args.checkpoint_dir.absolute())
+            algo.restore(abs_checkpoint_dir)
+            
+            # Use CSV as source of truth for iteration count
+            if args.metrics_csv.exists():
+                try:
+                    df = pd.read_csv(args.metrics_csv)
+                    if not df.empty:
+                        start_iteration = int(df["iteration"].max())
+                        print(f"  Resuming from iteration {start_iteration} (found in CSV)")
+                except Exception as csv_e:
+                    print(f"  WARNING: Could not read iteration from CSV: {csv_e}")
+                    # Fallback to internal counter if CSV fails
+                    if hasattr(algo, "iteration"):
+                        start_iteration = algo.iteration
+            
+        except Exception as e:
+            print(f"  WARNING: Failed to restore checkpoint: {e}")
+            print("  Starting from scratch instead.")
 
     args.checkpoint_dir.mkdir(parents=True, exist_ok=True)
     print(
-        f"\nTraining Physics PPO for {args.iterations} iterations"
+        f"\nTraining Physics PPO from iteration {start_iteration + 1} to {args.iterations}"
     )
     print(f"  Drones: {args.num_drones}")
     print(f"  Obstacles: {args.num_obstacles}")
@@ -176,14 +205,16 @@ def main() -> None:
         "max_steps",
         "seed",
     ]
-    for i in range(1, args.iterations + 1):
+    curr_iter = start_iteration
+    while curr_iter < args.iterations:
+        curr_iter += 1
         result = algo.train()
         reward_mean, length_mean = extract_episode_stats(result)
-        print(f"iter={i:04d} reward_mean={reward_mean:9.3f} len_mean={length_mean:7.2f}")
+        print(f"iter={curr_iter:04d} reward_mean={reward_mean:9.3f} len_mean={length_mean:7.2f}")
         _append_csv_row(
             args.metrics_csv,
             {
-                "iteration": i,
+                "iteration": curr_iter,
                 "episode_reward_mean": f"{reward_mean:.6f}",
                 "episode_len_mean": f"{length_mean:.6f}",
                 "timesteps_total": int(_to_float(result.get("timesteps_total", 0), 0.0)),
@@ -202,9 +233,9 @@ def main() -> None:
         )
         
         # Save checkpoint more frequently for physics?
-        if i % 10 == 0:
+        if curr_iter % 10 == 0:
             checkpoint = algo.save(str(args.checkpoint_dir))
-            print(f"Saved checkpoint: {checkpoint}")
+            print(f"  Saved checkpoint: {checkpoint}")
 
     checkpoint = algo.save(str(args.checkpoint_dir))
     print(f"Saved checkpoint: {checkpoint}")
