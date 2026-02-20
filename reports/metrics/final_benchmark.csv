@@ -1,0 +1,7 @@
+scenario_id,mode,episodes,success_rate,collision_free_rate,threshold_success_rate,threshold_collision_free_rate,pass_fail,mean_time_to_goal,formation_error,path_efficiency,episode_reward_mean,episode_reward_std,checkpoint_path
+single_agent_static,ctde,10,1.000000,1.000000,0.600000,0.700000,PASS,200.000000,0.000000,0.734493,-6.866289,12.353314,C:\Users\umair\Videos\Multi-Agent RL for Autonomous Drone Swarms\checkpoints\ctde_run
+multi_agent_n3_static,ctde,10,1.000000,1.000000,0.500000,0.600000,PASS,115.100000,7.022086,1.448726,-139.196895,91.165750,C:\Users\umair\Videos\Multi-Agent RL for Autonomous Drone Swarms\checkpoints\ctde_run
+single_agent_static,ctde,10,1.000000,1.000000,0.600000,0.700000,PASS,157.600000,0.000000,1.807199,0.903873,23.856626,C:\Users\umair\Videos\Multi-Agent RL for Autonomous Drone Swarms\checkpoints\attention_run
+multi_agent_n3_static,ctde,10,1.000000,1.000000,0.500000,0.600000,PASS,129.400000,9.151107,0.904757,-201.303773,131.534641,C:\Users\umair\Videos\Multi-Agent RL for Autonomous Drone Swarms\checkpoints\attention_run
+single_agent_static,physics,10,1.000000,1.000000,0.600000,0.700000,PASS,163.100000,0.000000,1.338690,-3.670400,12.837806,C:\Users\umair\Videos\Multi-Agent RL for Autonomous Drone Swarms\checkpoints\physics_run
+multi_agent_n3_static,physics,10,1.000000,1.000000,0.500000,0.600000,PASS,111.000000,11.009034,0.941014,-251.548572,215.563670,C:\Users\umair\Videos\Multi-Agent RL for Autonomous Drone Swarms\checkpoints\physics_run

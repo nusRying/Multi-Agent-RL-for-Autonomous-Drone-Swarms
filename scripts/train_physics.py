@@ -180,6 +180,12 @@ def main() -> None:
             print("  Starting from scratch instead.")
 
     args.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    
+    if args.iterations <= start_iteration:
+        print(f"\nTarget iterations ({args.iterations}) already reached (current: {start_iteration}).")
+        print("Use a higher --iterations value to continue training.")
+        return
+
     print(
         f"\nTraining Physics PPO from iteration {start_iteration + 1} to {args.iterations}"
     )

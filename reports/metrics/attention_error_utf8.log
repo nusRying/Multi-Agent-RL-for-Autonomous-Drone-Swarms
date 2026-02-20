@@ -1,0 +1,466 @@
+﻿C:\Users\umair\miniconda3\envs\co
+mp_vision\python.exe : 
+2026-02-19 16:04:01,130	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+At line:1 char:1
++ C:\Users\umair\miniconda3\envs\
+comp_vision\python.exe 
+scripts/evaluat ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo          : No 
+   tSpecified: (2026-02-19 16:0  
+  ...r test purposes:String) [   
+ ], RemoteException
+    + FullyQualifiedErrorId : Na 
+   tiveCommandError
+ 
+2026-02-19 16:04:03,930	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:03,930	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:03,933	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:03,934	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,468	WARNING 
+framework.py:119 -- Not 
+importing JAX for test purposes.
+2026-02-19 16:04:05,468	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,501	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,506	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,514	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,517	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,519	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,532	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,534	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,536	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,539	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,542	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,542	WARNING 
+framework.py:256 -- Not 
+importing TensorFlow Probability 
+for test purposes.
+2026-02-19 16:04:05,557	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,588	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,589	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,594	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,595	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,598	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,599	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,607	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,610	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,614	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,615	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,617	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,618	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,621	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,621	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,635	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,636	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,639	WARNING 
+framework.py:119 -- Not 
+importing JAX for test purposes.
+2026-02-19 16:04:05,642	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,647	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:05,647	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,598	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,599	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,603	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,606	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,614	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,629	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,633	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,634	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+pybullet build time: Feb 17 2026 
+12:20:44
+2026-02-19 16:04:06,681	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,683	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,727	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,734	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,737	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,780	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,792	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,794	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,796	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,799	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,799	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,805	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,815	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,832	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,833	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,833	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,834	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,836	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,836	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,836	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,848	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,849	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,849	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,849	WARNING 
+framework.py:256 -- Not 
+importing TensorFlow Probability 
+for test purposes.
+2026-02-19 16:04:06,852	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,853	WARNING 
+framework.py:256 -- Not 
+importing TensorFlow Probability 
+for test purposes.
+2026-02-19 16:04:06,854	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:06,854	WARNING 
+framework.py:256 -- Not 
+importing TensorFlow Probability 
+for test purposes.
+2026-02-19 16:04:06,859	WARNING 
+framework.py:157 -- Not 
+importing TensorFlow for test 
+purposes
+2026-02-19 16:04:12,689	INFO 
+worker.py:2012 -- Started a 
+local Ray instance.
+C:\Users\umair\miniconda3\envs\co
+mp_vision\lib\site-packages\ray\_
+private\worker.py:2051: 
+FutureWarning: Tip: In future 
+versions of Ray, Ray will no 
+longer override accelerator 
+visible devices env var if 
+num_gpus=0 or num_gpus=None 
+(default). To enable this 
+behavior and turn off this error 
+message, set RAY_ACCEL_ENV_VAR_OV
+ERRIDE_ON_ZERO=0
+  warnings.warn(
+2026-02-19 16:04:18,605	WARNING 
+deprecation.py:50 -- 
+DeprecationWarning: `build` has 
+been deprecated. Use 
+`AlgorithmConfig.build_algo` 
+instead. This will raise an 
+error in the future!
+C:\Users\umair\miniconda3\envs\co
+mp_vision\lib\site-packages\ray\r
+llib\algorithms\algorithm.py:526:
+ RayDeprecationWarning: This API 
+is deprecated and may be removed 
+in future Ray releases. You 
+could suppress this warning by 
+setting env variable PYTHONWARNIN
+GS="ignore::DeprecationWarning"
+`UnifiedLogger` will be removed 
+in Ray 2.7.
+  return UnifiedLogger(config, 
+logdir, loggers=None)
+C:\Users\umair\miniconda3\envs\co
+mp_vision\lib\site-packages\ray\t
+une\logger\unified.py:53: 
+RayDeprecationWarning: This API 
+is deprecated and may be removed 
+in future Ray releases. You 
+could suppress this warning by 
+setting env variable PYTHONWARNIN
+GS="ignore::DeprecationWarning"
+The `JsonLogger interface is 
+deprecated in favor of the `ray.t
+une.json.JsonLoggerCallback` 
+interface and will be removed in 
+Ray 2.7.
+  self._loggers.append(cls(self.c
+onfig, self.logdir, self.trial))
+C:\Users\umair\miniconda3\envs\co
+mp_vision\lib\site-packages\ray\t
+une\logger\unified.py:53: 
+RayDeprecationWarning: This API 
+is deprecated and may be removed 
+in future Ray releases. You 
+could suppress this warning by 
+setting env variable PYTHONWARNIN
+GS="ignore::DeprecationWarning"
+The `CSVLogger interface is 
+deprecated in favor of the 
+`ray.tune.csv.CSVLoggerCallback` 
+interface and will be removed in 
+Ray 2.7.
+  self._loggers.append(cls(self.c
+onfig, self.logdir, self.trial))
+C:\Users\umair\miniconda3\envs\co
+mp_vision\lib\site-packages\ray\t
+une\logger\unified.py:53: 
+RayDeprecationWarning: This API 
+is deprecated and may be removed 
+in future Ray releases. You 
+could suppress this warning by 
+setting env variable PYTHONWARNIN
+GS="ignore::DeprecationWarning"
+The `TBXLogger interface is 
+deprecated in favor of the `ray.t
+une.tensorboardx.TBXLoggerCallbac
+k` interface and will be removed 
+in Ray 2.7.
+  self._loggers.append(cls(self.c
+onfig, self.logdir, self.trial))
+2026-02-19 16:04:18,734	WARNING 
+deprecation.py:50 -- 
+DeprecationWarning: 
+`get_agent_ids` has been 
+deprecated. Use 
+`MultiAgentEnv.possible_agents` 
+instead. This will raise an 
+error in the future!
+2026-02-19 16:04:20,049	WARNING 
+catalog.py:548 -- Custom ModelV2 
+should accept all custom options 
+as **kwargs, instead of 
+expecting them in 
+config['custom_model_config']!
+2026-02-19 16:04:23,121	WARNING 
+util.py:61 -- Install gputil for 
+GPU system monitoring.
+Traceback (most recent call 
+last):
+  File "C:\Users\umair\Videos\Mul
+ti-Agent RL for Autonomous Drone 
+Swarms\scripts\evaluate_protocol.
+py", line 460, in <module>
+    main()
+  File "C:\Users\umair\Videos\Mul
+ti-Agent RL for Autonomous Drone 
+Swarms\scripts\evaluate_protocol.
+py", line 389, in main
+    _restore_algo(algo, 
+checkpoint_path)
+  File "C:\Users\umair\Videos\Mul
+ti-Agent RL for Autonomous Drone 
+Swarms\scripts\evaluate_protocol.
+py", line 164, in _restore_algo
+    raise RuntimeError(f"Failed 
+to restore checkpoint from all 
+path formats:\n{joined}")
+RuntimeError: Failed to restore 
+checkpoint from all path formats:
+C:\Users\umair\Videos\Multi-Agent
+ RL for Autonomous Drone 
+Swarms\checkpoints\attention_run 
+-> loaded state dict contains a 
+parameter group that doesn't 
+match the size of optimizer's 
+group
+C:/Users/umair/Videos/Multi-Agent
+ RL for Autonomous Drone 
+Swarms/checkpoints/attention_run 
+-> loaded state dict contains a 
+parameter group that doesn't 
+match the size of optimizer's 
+group
+file:///C:/Users/umair/Videos/Mul
+ti-Agent%20RL%20for%20Autonomous%
+20Drone%20Swarms/checkpoints/atte
+ntion_run -> Expected a local 
+filesystem path, got a URI: 'file
+:///C:/Users/umair/Videos/Multi-A
+gent%20RL%20for%20Autonomous%20Dr
+one%20Swarms/checkpoints/attentio
+n_run'

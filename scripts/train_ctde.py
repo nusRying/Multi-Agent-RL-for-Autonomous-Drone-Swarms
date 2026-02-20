@@ -171,9 +171,12 @@ def main() -> None:
             print("  Starting from scratch instead.")
 
     args.checkpoint_dir.mkdir(parents=True, exist_ok=True)
-    print(
-        f"DEBUG: Final start_iteration = {start_iteration}"
-    )
+    
+    if args.iterations <= start_iteration:
+        print(f"\nTarget iterations ({args.iterations}) already reached (current: {start_iteration}).")
+        print("Use a higher --iterations value to continue training.")
+        return
+
     print(
         f"Training CTDE PPO from iteration {start_iteration + 1} to {args.iterations}"
     )

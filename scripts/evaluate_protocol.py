@@ -21,7 +21,12 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from swarm_marl.envs import DroneSwarmEnv, SingleDroneEnv
-from swarm_marl.training import build_multi_agent_ppo_config, build_single_agent_ppo_config
+from swarm_marl.envs.drone_physics_env import DronePhysicsEnv
+from swarm_marl.training import (
+    build_multi_agent_ppo_config,
+    build_single_agent_ppo_config,
+    build_ctde_ppo_config,
+)
 from swarm_marl.utils import load_structured_config
 
 try:
@@ -60,9 +65,20 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--mode",
-        choices=["auto", "single", "multi"],
+        choices=["auto", "single", "multi", "ctde", "physics"],
         default="auto",
-        help="Policy/environment mode. 'auto' infers from scenario num_drones.",
+        help="Algorithm mode. 'auto' infers from the first scenario.",
+    )
+    parser.add_argument(
+        "--num-drones",
+        type=int,
+        default=3,
+        help="Number of drones for the algorithm architecture (must match checkpoint).",
+    )
+    parser.add_argument(
+        "--attention",
+        action="store_true",
+        help="Enable Attention block in the CentralizedCriticModel (must match checkpoint).",
     )
     parser.add_argument("--num-workers", type=int, default=0, help="RLlib rollout workers for restore config.")
     parser.add_argument(
@@ -153,9 +169,22 @@ def _restore_algo(algo: Any, checkpoint_path: str) -> None:
     raise RuntimeError(f"Failed to restore checkpoint from all path formats:\n{joined}")
 
 
-def _build_algo(mode: str, env_name: str, env_config: dict[str, Any], num_workers: int):
+def _build_algo(
+    mode: str,
+    env_name: str,
+    env_config: dict[str, Any],
+    num_workers: int,
+    use_attention: bool = False,
+):
     if mode == "single":
         cfg = build_single_agent_ppo_config(env_name, env_config, num_workers=num_workers)
+    elif mode in ("ctde", "physics"):
+        cfg = build_ctde_ppo_config(env_name, env_config, num_workers=num_workers)
+        if use_attention:
+            # Enable Attention
+            policy_spec = cfg.policies["shared_policy"]
+            policy_spec.config["model"]["custom_model_config"]["use_attention"] = True
+            cfg.multi_agent(policies={"shared_policy": policy_spec})
     else:
         cfg = build_multi_agent_ppo_config(env_name, env_config, num_workers=num_workers)
     return cfg.build()
@@ -329,8 +358,10 @@ def main() -> None:
 
     env_single = "single_drone_eval_v0"
     env_multi = "drone_swarm_eval_v0"
+    env_physics = "drone_physics_eval_v0"
     register_env(env_single, lambda cfg: SingleDroneEnv(cfg))
     register_env(env_multi, lambda cfg: DroneSwarmEnv(cfg))
+    register_env(env_physics, lambda cfg: DronePhysicsEnv(cfg))
 
     ray.init(ignore_reinit_error=True, include_dashboard=False)
     checkpoint_path = _extract_checkpoint_path(args.checkpoint)
@@ -353,6 +384,32 @@ def main() -> None:
         "checkpoint_path",
     ]
 
+    # Determine model mode and build algo once
+    first_scenario = scenarios[0]
+    first_env_cfg = dict(first_scenario.get("env_config", {}))
+    if args.mode == "auto":
+        mode = "single" if int(first_env_cfg.get("num_drones", 1)) <= 1 else "multi"
+    else:
+        mode = args.mode
+
+    if mode == "physics":
+        env_name = env_physics
+    elif mode == "single":
+        env_name = env_single
+    else:
+        env_name = env_multi
+
+    # Use args.num_drones for the architecture to match checkpoint
+    algo_cfg = {**first_env_cfg, "num_drones": args.num_drones}
+    algo = _build_algo(
+        mode,
+        env_name,
+        algo_cfg,
+        args.num_workers,
+        use_attention=args.attention,
+    )
+    _restore_algo(algo, checkpoint_path)
+
     try:
         for scenario in scenarios:
             if not isinstance(scenario, dict):
@@ -361,18 +418,6 @@ def main() -> None:
             scenario_id = str(scenario.get("scenario_id", "scenario"))
             env_cfg = dict(scenario.get("env_config", {}))
             num_drones = int(env_cfg.get("num_drones", 1))
-
-            if args.mode == "auto":
-                mode = "single" if num_drones <= 1 else "multi"
-            else:
-                mode = args.mode
-
-            env_name = env_single if mode == "single" else env_multi
-            algo_env_cfg = dict(env_cfg)
-            algo_env_cfg["seed"] = int(seeds[0])
-
-            algo = _build_algo(mode, env_name, algo_env_cfg, args.num_workers)
-            _restore_algo(algo, checkpoint_path)
 
             episodes: list[EpisodeSummary] = []
             for seed in seeds:
